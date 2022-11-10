@@ -3,8 +3,8 @@
 #include <ESP32Servo.h>
 #include <PubSubClient.h>
 
-const char* ssid = "TP-LINK_CA8136";
-const char* password =  "56611533";
+const char* ssid = "";
+const char* password =  "";
 const char* mqttServer = "broker.hivemq.com";
 const int mqttPort = 1883;
 const char* mqttUser = "";
