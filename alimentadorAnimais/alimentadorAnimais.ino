@@ -1,11 +1,10 @@
-//Programa: Modulo ESP32 Wifi com MQTT
-//Autor: Arduino e Cia
-
 #include <WiFi.h>
+#include <stdio.h>
+#include <ESP32Servo.h>
 #include <PubSubClient.h>
 
-const char* ssid = "Gusthawo's Galaxy S22+";
-const char* password = "uvcz4313";
+const char* ssid = "";
+const char* password =  "";
 const char* mqttServer = "broker.hivemq.com";
 const int mqttPort = 1883;
 const char* mqttUser = "";
@@ -14,19 +13,29 @@ const char* mqttPassword = "";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-char mensagem[30];
+char* topicoAtualizarIntervalo="/pac6iotatualizarintervalo";
+char* topicoLiberacao="/pac6iotalimentadordeanimais";
+char* mensagem = "{ "
+                 " \"chatId\": 5538251965,"
+                 " \"type\": \"message\","
+                 " \"content\": \"Alimento Liberado com Sucesso!\""
+                 "}";
+
+Servo myservo;
+int servoPin = 13;
+int tempoIntervalo = 1000;
+
+void callback(char* topic, byte* payload, unsigned int length);
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i=0;i<length;i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-}
+  char* payloadChar = (char*)payload;
+  tempoIntervalo = atoi(payloadChar);
 
+}
 void setup() {
+  myservo.setPeriodHertz(50); 
+  myservo.attach(servoPin);
+
   Serial.begin(115200);
   WiFi.begin(ssid, password);
 
@@ -44,25 +53,39 @@ void loop() {
     reconectabroker();
   }
 
+  liberarComida();
 
-  //Envia a mensagem ao broker
-  if (client.publish("/pac6iotalimentadoranimais1", "{ \"chatId\": 5538251965, \"type\": \"message\", \"content\": \"Opa, deu Boa o ChatBot!\" }")) {
-    Serial.println("Mensagem enviada com sucesso...");
-  }
-
-  //Aguarda 30 segundos para enviar uma nova mensagem
-  delay(10000);
+  atualizarIntervaloComida();
+  
   client.loop();
 }
 
+void liberarComida() {
+  myservo.write(90);
+  delay(1000);
+  myservo.write(0);
+
+  if (client.publish(topicoLiberacao, mensagem)) {
+    Serial.println("Mensagem enviada com sucesso...");
+  }
+  delay(tempoIntervalo);   
+}
+
+void atualizarIntervaloComida(){
+  client.subscribe(topicoAtualizarIntervalo);
+}
+
 void reconectabroker() {
-  //Conexao ao broker MQTT
   client.setServer(mqttServer, mqttPort);
+  
   while (!client.connected()) {
     Serial.println("Conectando ao broker MQTT...");
+    
     if (client.connect("ESP32ClientPAC6", mqttUser, mqttPassword)) {
       Serial.println("Conectado ao broker!");
+
     } else {
+      
       Serial.print("Falha na conexao ao broker - Estado: ");
       Serial.print(client.state());
       delay(2000);
