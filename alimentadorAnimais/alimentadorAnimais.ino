@@ -2,9 +2,10 @@
 #include <stdio.h>
 #include <ESP32Servo.h>
 #include <PubSubClient.h>
+#include "ESPDateTime.h"
 
-const char* ssid = "";
-const char* password =  "";
+const char* ssid = "TP-LINK_CA8136";
+const char* password =  "56611533";
 const char* mqttServer = "broker.hivemq.com";
 const int mqttPort = 1883;
 const char* mqttUser = "";
@@ -25,13 +26,13 @@ Servo myservo;
 int servoPin = 13;
 int tempoIntervalo = 1000;
 
-void callback(char* topic, byte* payload, unsigned int length);
-
-void callback(char* topic, byte* payload, unsigned int length) {
+void teste(char* topic, byte* payload, unsigned int length) {
   char* payloadChar = (char*)payload;
   tempoIntervalo = atoi(payloadChar);
-
+  Serial.println(tempoIntervalo);
 }
+
+
 void setup() {
   myservo.setPeriodHertz(50); 
   myservo.attach(servoPin);
@@ -45,15 +46,21 @@ void setup() {
   }
 
   Serial.println("Conectado na rede WiFi!");
-  client.setCallback(callback);
+
+  client.setCallback(teste);
 }
 
-void loop() {
+void loop() {   
   if (!client.connected()) {
     reconectabroker();
   }
 
   liberarComida();
+
+  if (client.publish(topicoLiberacao, mensagem)) {
+    Serial.println("Mensagem enviada com sucesso...");
+  }
+  delay(tempoIntervalo); 
 
   atualizarIntervaloComida();
   
@@ -63,12 +70,7 @@ void loop() {
 void liberarComida() {
   myservo.write(90);
   delay(1000);
-  myservo.write(0);
-
-  if (client.publish(topicoLiberacao, mensagem)) {
-    Serial.println("Mensagem enviada com sucesso...");
-  }
-  delay(tempoIntervalo);   
+  myservo.write(0);  
 }
 
 void atualizarIntervaloComida(){
