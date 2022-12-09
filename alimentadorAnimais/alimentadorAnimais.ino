@@ -4,8 +4,8 @@
 #include <PubSubClient.h>
 #include "ESPDateTime.h"
 
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "TP-LINK_CA8136";
+const char* password = "56611533";
 const char* mqttServer = "broker.hivemq.com";
 const int mqttPort = 1883;
 const char* mqttUser = "";
@@ -24,7 +24,7 @@ char* mensagem = "{ "
 
 Servo myservo;
 int servoPin = 13;
-int tempoIntervalo = 1000;
+int tempoIntervalo = 5000;
 
 void callback(char* topic, byte *payload, unsigned int lengt) {
   char* payloadChar = (char*)payload;
@@ -57,7 +57,8 @@ void loop() {
     reconectabroker();
   }
   
-  //delay(tempoIntervalo);
+  delay(tempoIntervalo);
+  liberarComida();
 
   atualizarIntervaloComida();
 
@@ -68,6 +69,7 @@ void liberarComida() {
   myservo.write(90);
   delay(1000);
   myservo.write(0);
+  Serial.println("Comida Liberada!");
 }
 
 void atualizarIntervaloComida() {
