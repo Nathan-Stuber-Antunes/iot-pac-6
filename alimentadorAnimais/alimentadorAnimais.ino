@@ -4,8 +4,8 @@
 #include <PubSubClient.h>
 #include "ESPDateTime.h"
 
-const char* ssid = "TP-LINK_CA8136";
-const char* password =  "56611533";
+const char* ssid = "";
+const char* password = "";
 const char* mqttServer = "broker.hivemq.com";
 const int mqttPort = 1883;
 const char* mqttUser = "";
@@ -14,8 +14,8 @@ const char* mqttPassword = "";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-char* topicoAtualizarIntervalo="/pac6iotatualizarintervalo";
-char* topicoLiberacao="/pac6iotalimentadordeanimais";
+char* topicoAtualizarIntervalo = "/pac6iotatualizarporintervalo";
+char* topicoLiberacao = "/pac6iotalimentadordeanimais";
 char* mensagem = "{ "
                  " \"chatId\": 5538251965,"
                  " \"type\": \"message\","
@@ -26,15 +26,17 @@ Servo myservo;
 int servoPin = 13;
 int tempoIntervalo = 1000;
 
-void teste(char* topic, byte* payload, unsigned int length) {
+void callback(char* topic, byte *payload, unsigned int lengt) {
   char* payloadChar = (char*)payload;
-  tempoIntervalo = atoi(payloadChar);
-  Serial.println(tempoIntervalo);
+  Serial.println(payloadChar);
+  liberarComida();
+  Serial.println("");
+  Serial.println("liberarComida");
+  Serial.println("");
 }
 
-
 void setup() {
-  myservo.setPeriodHertz(50); 
+  myservo.setPeriodHertz(50);
   myservo.attach(servoPin);
 
   Serial.begin(115200);
@@ -46,48 +48,43 @@ void setup() {
   }
 
   Serial.println("Conectado na rede WiFi!");
-
-  client.setCallback(teste);
+  
+  client.setCallback(callback);
 }
 
-void loop() {   
+void loop() {
   if (!client.connected()) {
     reconectabroker();
   }
-
-  liberarComida();
-
-  if (client.publish(topicoLiberacao, mensagem)) {
-    Serial.println("Mensagem enviada com sucesso...");
-  }
-  delay(tempoIntervalo); 
+  
+  //delay(tempoIntervalo);
 
   atualizarIntervaloComida();
-  
+
   client.loop();
 }
 
 void liberarComida() {
   myservo.write(90);
   delay(1000);
-  myservo.write(0);  
+  myservo.write(0);
 }
 
-void atualizarIntervaloComida(){
+void atualizarIntervaloComida() {
   client.subscribe(topicoAtualizarIntervalo);
 }
 
 void reconectabroker() {
   client.setServer(mqttServer, mqttPort);
-  
+
   while (!client.connected()) {
     Serial.println("Conectando ao broker MQTT...");
-    
+
     if (client.connect("ESP32ClientPAC6", mqttUser, mqttPassword)) {
       Serial.println("Conectado ao broker!");
 
     } else {
-      
+
       Serial.print("Falha na conexao ao broker - Estado: ");
       Serial.print(client.state());
       delay(2000);
